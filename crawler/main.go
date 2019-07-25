@@ -15,9 +15,8 @@ import (
 var (
 	file       = flag.String("file", "urls.txt", "File containing initial list of URls")
 	depth      = flag.Int("depth", 3, "depth to which the application needs to crawl")
-	download   = flag.String("download", "/tmp/crawler", "location to download URL contents")
 	count      = flag.Int("count", 4, "worker count")
-	inactivity = flag.Int("inactivity", 5, "default time worker remain idle")
+	inactivity = flag.Int("inactivity", 15, "default time worker remain idle")
 )
 
 func urls(filePath string) ([]string, error) {
@@ -56,7 +55,6 @@ func main() {
 
 	cr := crawler.NewCrawler(
 		*depth,
-		*download,
 		*count,
 		uris,
 		time.Duration(*inactivity)*time.Second,

@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"container/list"
 	"log"
 	"sync"
 	"time"
@@ -25,6 +26,9 @@ type Dispatcher struct {
 	rslt chan []string
 	end  chan bool
 	wg   *sync.WaitGroup
+
+	buffer *list.List
+	tkr    *time.Ticker
 }
 
 func (d *Dispatcher) dispatcher(end chan bool) {
@@ -61,10 +65,29 @@ func (d *Dispatcher) collector(end chan bool) {
 				}
 
 				for _, t := range tasks {
-					d.task <- t
+					d.buffer.PushBack(t)
 				}
 			case <-end:
 				return
+			}
+		}
+	}()
+}
+
+func (d *Dispatcher) emitter() {
+	go func() {
+		for {
+
+			select {
+			case <-d.tkr.C:
+				for e := d.buffer.Front(); e != nil; e = e.Next() {
+					if e.Prev() != nil {
+						d.buffer.Remove(e.Prev())
+					}
+
+					task := e.Value.(Task)
+					d.task <- task
+				}
 			}
 		}
 	}()
@@ -96,6 +119,7 @@ func (d *Dispatcher) Dispatch() (Collector, error) {
 	d.janitor(cend, dend)
 	d.collector(cend)
 	d.dispatcher(dend)
+	d.emitter()
 
 	return Collector{d.task, d.end}, nil
 }
@@ -121,5 +145,7 @@ func NewDispatcher(wc int, inactivity time.Duration, wg *sync.WaitGroup) Dispatc
 		task:        make(chan Task),
 		rslt:        result,
 		end:         make(chan bool),
+		buffer:      list.New(),
+		tkr:         time.NewTicker(2 * time.Second),
 	}
 }

@@ -14,9 +14,6 @@ type Crawler struct {
 	// Depth to which we need to crawl
 	depth int
 
-	// Download Location
-	download string
-
 	dispatcher  Dispatcher
 	taskBuilder TaskBuilder
 
@@ -24,7 +21,7 @@ type Crawler struct {
 }
 
 func (c *Crawler) String() string {
-	return fmt.Sprintf("Depth: {%d} Loc: {%s} URLs: {%v}", c.depth, c.download, c.URLs)
+	return fmt.Sprintf("Depth: {%d} Loc: {%s} URLs: {%v}", c.depth, c.URLs)
 }
 
 // Crawl crawls the given URL and saves the downloaded file on
@@ -49,7 +46,6 @@ func (c *Crawler) Crawl() (chan bool, error) {
 // NewCrawler returns a new Crawler object
 func NewCrawler(
 	depth int,
-	download string,
 	wc int,
 	urls []string,
 	inactivity time.Duration,
@@ -58,7 +54,6 @@ func NewCrawler(
 	return Crawler{
 		urls,
 		depth,
-		download,
 		NewDispatcher(wc, inactivity, wg),
 		NewTaskBuilder(),
 		wg,
