@@ -23,7 +23,7 @@ type defaultWorker struct {
 	// terminates the worker loop
 	end chan bool
 	// results is channel where we return the output of execution
-	result chan []string
+	result chan *Result
 
 	inactiveTimer *Timer
 
@@ -84,7 +84,7 @@ func (dw *defaultWorker) Stop() {
 func NewDefaultWorker(
 	id int,
 	contc chan chan Task,
-	result chan []string,
+	result chan *Result,
 	inactivity time.Duration,
 	wg *sync.WaitGroup,
 ) Worker {

@@ -15,17 +15,24 @@ type Task struct {
 
 	Type string
 
+	Depth int
+
 	Data string
 }
 
-// TaskBuilder builds new tasks from given results
-type TaskBuilder func([]string) ([]Task, error)
+type Result struct {
+	Depth int
+	Vals  []string
+}
 
-func NewTaskBuilder() TaskBuilder {
+// TaskBuilder builds new tasks from given results
+type TaskBuilder func(*Result) ([]Task, error)
+
+func NewTaskBuilder(maxDepth int) TaskBuilder {
 	var (
 		taskID int
 
-		processor = func(en string) Task {
+		processor = func(en string, depth int) Task {
 			var taskType string
 
 			switch {
@@ -42,22 +49,29 @@ func NewTaskBuilder() TaskBuilder {
 			return Task{
 				taskID,
 				taskType,
+				depth + 1,
 				en,
 			}
 		}
 	)
 
-	return func(entries []string) ([]Task, error) {
+	return func(result *Result) ([]Task, error) {
+		entries := result.Vals
+
 		if len(entries) == 0 {
 			return nil, errUndefinedTask
 		}
 
 		var tasks []Task
 
+		if result.Depth >= maxDepth {
+			return nil, errUndefinedTask
+		}
+
 		for _, en := range entries {
 			tasks = append(
 				tasks,
-				processor(en),
+				processor(en, result.Depth),
 			)
 		}
 

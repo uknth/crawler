@@ -3,7 +3,6 @@ package crawler
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,7 +22,7 @@ var (
 
 // Executor defines the task executor
 type Executor interface {
-	Execute(task Task) ([]string, error)
+	Execute(task Task) (*Result, error)
 }
 
 // ExecutorDispatcher returns dispatcher based on the Task type
@@ -80,45 +79,42 @@ func (de *downloadExecutor) generateFile(taskID int) string {
 	return de.dir + strconv.Itoa(taskID) + ".html"
 }
 
-func (de *downloadExecutor) Execute(task Task) ([]string, error) {
-	log.Println("Download Task Received:", task.ID, task.Type, task.Data)
+func (de *downloadExecutor) Execute(task Task) (*Result, error) {
+	log.Println("Download Task Received:", task.ID, task.Type, task.Depth, task.Data)
 	var results []string
 
 	u, err := de.url(task.Data)
 	if err != nil {
-		return results, err
+		return nil, err
 	}
 
 	req, err := de.newRequest(u)
 	if err != nil {
-		return results, err
+		return nil, err
 	}
 
 	res, err := de.dial(req)
 	if err != nil {
-		return results, err
+		return nil, err
 	}
 
 	defer res.Body.Close()
 
 	bts, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return results, err
+		return nil, err
 	}
-
 	fn := de.generateFile(task.ID)
-
 	err = ioutil.WriteFile(
 		fn,
 		bts,
 		0644,
 	)
 	if err != nil {
-		return results, err
+		return nil, err
 	}
-
 	results = append(results, fn)
-	return results, nil
+	return &Result{task.Depth, results}, nil
 }
 
 type parseExecutor struct{}
@@ -139,13 +135,13 @@ func (pe *parseExecutor) queryDocument(fn string) (*goquery.Document, error) {
 	return goquery.NewDocumentFromReader(fl)
 }
 
-func (pe *parseExecutor) Execute(task Task) ([]string, error) {
-	log.Println("Parse Task Received:", task.ID, task.Type, task.Data)
+func (pe *parseExecutor) Execute(task Task) (*Result, error) {
+	log.Println("Parse Task Received:", task.ID, task.Type, task.Depth, task.Data)
 	var results []string
 
 	err := pe.validateFile(task.Data)
 	if err != nil {
-		return results, err
+		return nil, err
 	}
 
 	doc, err := pe.queryDocument(task.Data)
@@ -163,8 +159,7 @@ func (pe *parseExecutor) Execute(task Task) ([]string, error) {
 		}
 	})
 
-	fmt.Println("RESULTS", results)
-	return results, nil
+	return &Result{task.Depth, results}, nil
 }
 
 // NewDownloadExecutor returns an executor which performs the download task

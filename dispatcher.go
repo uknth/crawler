@@ -23,7 +23,7 @@ type Dispatcher struct {
 
 	// task controls
 	task chan Task
-	rslt chan []string
+	rslt chan *Result
 	end  chan bool
 	wg   *sync.WaitGroup
 
@@ -77,16 +77,12 @@ func (d *Dispatcher) collector(end chan bool) {
 func (d *Dispatcher) emitter() {
 	go func() {
 		for {
-
 			select {
 			case <-d.tkr.C:
 				for e := d.buffer.Front(); e != nil; e = e.Next() {
-					if e.Prev() != nil {
-						d.buffer.Remove(e.Prev())
-					}
-
 					task := e.Value.(Task)
 					d.task <- task
+					d.buffer.Remove(e)
 				}
 			}
 		}
@@ -125,12 +121,12 @@ func (d *Dispatcher) Dispatch() (Collector, error) {
 }
 
 // NewDispatcher returns a dispatcher
-func NewDispatcher(wc int, inactivity time.Duration, wg *sync.WaitGroup) Dispatcher {
+func NewDispatcher(wc int, depth int, inactivity time.Duration, wg *sync.WaitGroup) Dispatcher {
 	var (
 		workers []Worker
 
 		control = make(chan chan Task)
-		result  = make(chan []string)
+		result  = make(chan *Result)
 	)
 
 	for idx := 1; idx <= wc; idx++ {
@@ -140,7 +136,7 @@ func NewDispatcher(wc int, inactivity time.Duration, wg *sync.WaitGroup) Dispatc
 
 	return Dispatcher{
 		workers:     workers,
-		taskbuilder: NewTaskBuilder(),
+		taskbuilder: NewTaskBuilder(depth),
 		control:     control,
 		task:        make(chan Task),
 		rslt:        result,

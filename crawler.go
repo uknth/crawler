@@ -32,7 +32,7 @@ func (c *Crawler) Crawl() (chan bool, error) {
 		return nil, err
 	}
 
-	tasks, err := c.taskBuilder(c.URLs)
+	tasks, err := c.taskBuilder(&Result{0, c.URLs})
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +54,8 @@ func NewCrawler(
 	return Crawler{
 		urls,
 		depth,
-		NewDispatcher(wc, inactivity, wg),
-		NewTaskBuilder(),
+		NewDispatcher(wc, depth, inactivity, wg),
+		NewTaskBuilder(depth),
 		wg,
 	}
 }
