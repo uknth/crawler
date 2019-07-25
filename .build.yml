@@ -1,0 +1,21 @@
+image: debian/stable
+
+packages:
+    - wget
+
+sources:
+    - https://git.sr.ht/~uknth/crawler
+tasks:
+    - go_install: |
+        wget -q https://dl.google.com/go/go1.12.linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf go1.12.linux-amd64.tar.gz
+        sudo ln -s /usr/local/go/bin/go /usr/bin/go
+        go env
+    - go_build: |
+        cd $HOME/crawler && go mod tidy && go build git.sr.ht/~uknth/crawler/...
+    - test: |
+        cd $HOME/crawler && go test -v ./...
+triggers:
+    - action: email
+      condition: always
+      to: uknth@outlook.com
