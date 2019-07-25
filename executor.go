@@ -1,6 +1,9 @@
 package crawler
 
-import "errors"
+import (
+	"errors"
+	"log"
+)
 
 var (
 	errExecutorNotFound = errors.New("executor not found")
@@ -31,14 +34,24 @@ func NewExecutorDispatcher() ExecutorDispatcher {
 
 type downloadExecutor struct{}
 
+func (de *downloadExecutor) Execute(task Task) ([]string, error) {
+	log.Println("Download Task Received:", task.ID, task.Type, task.Data)
+	return []string{}, nil
+}
+
 type parseExecutor struct{}
+
+func (pe *parseExecutor) Execute(task Task) ([]string, error) {
+	log.Println("Parse Task Received:", task.ID, task.Type, task.Data)
+	return []string{}, nil
+}
 
 // NewDownloadExecutor returns an executor which performs the download task
 func NewDownloadExecutor() (Executor, error) {
-	return nil, nil
+	return &downloadExecutor{}, nil
 }
 
 // NewParseExecutor returns an executor which performs the parsing task
 func NewParseExecutor() (Executor, error) {
-	return nil, nil
+	return &parseExecutor{}, nil
 }

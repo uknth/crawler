@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"git.sr.ht/~uknth/crawler"
 )
@@ -14,6 +15,7 @@ var (
 	file     = flag.String("file", "urls.txt", "File containing initial list of URls")
 	depth    = flag.Int("depth", 3, "depth to which the application needs to crawl")
 	download = flag.String("download", "/tmp/crawler", "location to download URL contents")
+	count    = flag.Int("count", 4, "worker count")
 )
 
 func urls(filePath string) ([]string, error) {
@@ -48,8 +50,8 @@ func main() {
 		return
 	}
 
-	cr, err := crawler.NewCrawler(
-		*depth, *download, uris,
+	cr := crawler.NewCrawler(
+		*depth, *download, *count, uris,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -57,4 +59,11 @@ func main() {
 	}
 
 	fmt.Println(cr.String())
+
+	err = cr.Crawl()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	time.Sleep(time.Duration(3) * time.Second)
 }

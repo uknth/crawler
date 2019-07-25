@@ -43,7 +43,6 @@ func (dw *defaultWorker) Start() {
 					log.Println("TASK ERROR: ", err.Error())
 					continue
 				}
-
 				dw.results <- result
 			case <-dw.end:
 				return
@@ -64,9 +63,10 @@ func NewDefaultWorker(
 	result chan []string,
 ) Worker {
 	return &defaultWorker{
-		id:   id,
-		cont: contc,
-		work: make(chan Task),
-		end:  make(chan bool),
+		id:         id,
+		cont:       contc,
+		work:       make(chan Task),
+		end:        make(chan bool),
+		dispatcher: NewExecutorDispatcher(),
 	}
 }

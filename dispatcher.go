@@ -98,7 +98,7 @@ func (d *Dispatcher) Dispatch() (Collector, error) {
 }
 
 // NewDispatcher returns a dispatcher
-func NewDispatcher(wc int) (Dispatcher, error) {
+func NewDispatcher(wc int) Dispatcher {
 	var (
 		workers []Worker
 
@@ -118,5 +118,5 @@ func NewDispatcher(wc int) (Dispatcher, error) {
 		task:        make(chan Task),
 		rslt:        make(chan []string),
 		end:         make(chan bool),
-	}, nil
+	}
 }

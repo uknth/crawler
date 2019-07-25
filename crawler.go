@@ -12,6 +12,9 @@ type Crawler struct {
 
 	// Download Location
 	download string
+
+	dispatcher  Dispatcher
+	taskBuilder TaskBuilder
 }
 
 func (c *Crawler) String() string {
@@ -21,14 +24,35 @@ func (c *Crawler) String() string {
 // Crawl crawls the given URL and saves the downloaded file on
 // given location
 func (c *Crawler) Crawl() error {
+	collector, err := c.dispatcher.Dispatch()
+	if err != nil {
+		return err
+	}
+
+	tasks, err := c.taskBuilder(c.URLs)
+	if err != nil {
+		return err
+	}
+
+	for _, task := range tasks {
+		collector.Work <- task
+	}
+
 	return nil
 }
 
 // NewCrawler returns a new Crawler object
 func NewCrawler(
-	depth int, 
-	download string, 
+	depth int,
+	download string,
+	wc int,
 	urls []string,
-) (*Crawler, error) {
-	return &Crawler{urls, depth, download}, nil
+) Crawler {
+	return Crawler{
+		urls,
+		depth,
+		download,
+		NewDispatcher(wc),
+		NewTaskBuilder(),
+	}
 }
