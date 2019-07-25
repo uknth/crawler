@@ -6,16 +6,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"git.sr.ht/~uknth/crawler"
 )
 
 var (
-	file     = flag.String("file", "urls.txt", "File containing initial list of URls")
-	depth    = flag.Int("depth", 3, "depth to which the application needs to crawl")
-	download = flag.String("download", "/tmp/crawler", "location to download URL contents")
-	count    = flag.Int("count", 4, "worker count")
+	file       = flag.String("file", "urls.txt", "File containing initial list of URls")
+	depth      = flag.Int("depth", 3, "depth to which the application needs to crawl")
+	download   = flag.String("download", "/tmp/crawler", "location to download URL contents")
+	count      = flag.Int("count", 4, "worker count")
+	inactivity = flag.Int("inactivity", 5, "default time worker remain idle")
 )
 
 func urls(filePath string) ([]string, error) {
@@ -50,8 +52,15 @@ func main() {
 		return
 	}
 
+	var wg sync.WaitGroup
+
 	cr := crawler.NewCrawler(
-		*depth, *download, *count, uris,
+		*depth,
+		*download,
+		*count,
+		uris,
+		time.Duration(*inactivity)*time.Second,
+		&wg,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -60,10 +69,11 @@ func main() {
 
 	fmt.Println(cr.String())
 
-	err = cr.Crawl()
+	endch, err := cr.Crawl()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	time.Sleep(time.Duration(3) * time.Second)
+	wg.Wait()
+	endch <- true
 }

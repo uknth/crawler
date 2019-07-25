@@ -2,6 +2,8 @@ package crawler
 
 import (
 	"log"
+	"sync"
+	"time"
 )
 
 type Collector struct {
@@ -22,6 +24,7 @@ type Dispatcher struct {
 	task chan Task
 	rslt chan []string
 	end  chan bool
+	wg   *sync.WaitGroup
 }
 
 func (d *Dispatcher) dispatcher(end chan bool) {
@@ -98,7 +101,7 @@ func (d *Dispatcher) Dispatch() (Collector, error) {
 }
 
 // NewDispatcher returns a dispatcher
-func NewDispatcher(wc int) Dispatcher {
+func NewDispatcher(wc int, inactivity time.Duration, wg *sync.WaitGroup) Dispatcher {
 	var (
 		workers []Worker
 
@@ -107,7 +110,7 @@ func NewDispatcher(wc int) Dispatcher {
 	)
 
 	for idx := 1; idx <= wc; idx++ {
-		worker := NewDefaultWorker(idx, control, result)
+		worker := NewDefaultWorker(idx, control, result, inactivity, wg)
 		workers = append(workers, worker)
 	}
 
@@ -116,7 +119,7 @@ func NewDispatcher(wc int) Dispatcher {
 		taskbuilder: NewTaskBuilder(),
 		control:     control,
 		task:        make(chan Task),
-		rslt:        make(chan []string),
+		rslt:        result,
 		end:         make(chan bool),
 	}
 }

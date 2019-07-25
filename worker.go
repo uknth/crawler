@@ -1,6 +1,10 @@
 package crawler
 
-import "log"
+import (
+	"log"
+	"sync"
+	"time"
+)
 
 // Worker takes a task and executes it
 type Worker interface {
@@ -19,7 +23,11 @@ type defaultWorker struct {
 	// terminates the worker loop
 	end chan bool
 	// results is channel where we return the output of execution
-	results chan []string
+	result chan []string
+
+	inactiveTimer *Timer
+
+	wg *sync.WaitGroup
 
 	// dispatcher
 	dispatcher ExecutorDispatcher
@@ -27,11 +35,14 @@ type defaultWorker struct {
 
 func (dw *defaultWorker) Start() {
 	log.Printf("Starting Worker: %d\n", dw.id)
+	dw.wg.Add(1)
 	go func() {
 		for {
 			dw.cont <- dw.work
 			select {
 			case task := <-dw.work:
+				dw.inactiveTimer.Reset()
+
 				exec, err := dw.dispatcher(task)
 				if err != nil {
 					log.Println("DISPATCHER ERROR:", err.Error())
@@ -43,8 +54,21 @@ func (dw *defaultWorker) Start() {
 					log.Println("TASK ERROR: ", err.Error())
 					continue
 				}
-				dw.results <- result
+
+				dw.result <- result
 			case <-dw.end:
+				return
+			}
+		}
+	}()
+}
+
+func (dw *defaultWorker) janitor(end chan bool) {
+	go func() {
+		for {
+			select {
+			case <-end:
+				dw.wg.Done()
 				return
 			}
 		}
@@ -61,12 +85,22 @@ func NewDefaultWorker(
 	id int,
 	contc chan chan Task,
 	result chan []string,
+	inactivity time.Duration,
+	wg *sync.WaitGroup,
 ) Worker {
-	return &defaultWorker{
-		id:         id,
-		cont:       contc,
-		work:       make(chan Task),
-		end:        make(chan bool),
-		dispatcher: NewExecutorDispatcher(),
+	ender := make(chan bool)
+
+	dw := &defaultWorker{
+		id:            id,
+		cont:          contc,
+		work:          make(chan Task),
+		end:           make(chan bool),
+		result:        result,
+		inactiveTimer: NewTimer(inactivity, ender),
+		wg:            wg,
+		dispatcher:    NewExecutorDispatcher(),
 	}
+
+	dw.janitor(ender)
+	return dw
 }

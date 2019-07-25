@@ -43,7 +43,7 @@ type parseExecutor struct{}
 
 func (pe *parseExecutor) Execute(task Task) ([]string, error) {
 	log.Println("Parse Task Received:", task.ID, task.Type, task.Data)
-	return []string{}, nil
+	return []string{"http://new_url.com"}, nil
 }
 
 // NewDownloadExecutor returns an executor which performs the download task
