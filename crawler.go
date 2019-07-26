@@ -21,7 +21,7 @@ type Crawler struct {
 }
 
 func (c *Crawler) String() string {
-	return fmt.Sprintf("Depth: {%d} Loc: {%s} URLs: {%v}", c.depth, c.URLs)
+	return fmt.Sprintf("Depth: {%d} URLs: {%v}", c.depth, c.URLs)
 }
 
 // Crawl crawls the given URL and saves the downloaded file on
