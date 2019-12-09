@@ -1,6 +1,6 @@
 # Problem Statment
 
-[![builds.sr.ht status](https://builds.sr.ht/~uknth/crawler/.build.yml.svg)](https://builds.sr.ht/~uknth/crawler/.build.yml?)
+[![Github Actions Status](https://github.com/uknth/crawler/workflows/Go/badge.svg)](https://github.com/uknth/crawler/actions)
 
 Given a list of URLS download and contents of URL and store it at a location. Parse the downloaded content for more URLs and keep on downloading till a given depth.
 
